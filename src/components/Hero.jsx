@@ -20,19 +20,19 @@ export default function Hero() {
   const smoothX = useSpring(rawMouseX, springConfig);
   const smoothY = useSpring(rawMouseY, springConfig);
 
-  // Subtle Head Rotation & Tilt: Maximum ±2.5° Y rotation, ±1.5° X rotation (mature, natural)
-  const headRotateY = useTransform(smoothX, [-1, 1], [-2.5, 2.5]);
-  const headRotateX = useTransform(smoothY, [-1, 1], [1.5, -1.5]);
-  const headShiftX = useTransform(smoothX, [-1, 1], [-3, 3]);
-  const headShiftY = useTransform(smoothY, [-1, 1], [-2, 2]);
+  // Subtle Head Micro-Movement (Requirement 5: -1.5° to +1.5° Y, ±0.8° X, body/shoulders still)
+  const headRotateY = useTransform(smoothX, [-1, 1], [-1.5, 1.5]);
+  const headRotateX = useTransform(smoothY, [-1, 1], [0.8, -0.8]);
+  const headShiftX = useTransform(smoothX, [-1, 1], [-1.0, 1.0]);
+  const headShiftY = useTransform(smoothY, [-1, 1], [-0.5, 0.5]);
 
   // Background Parallax: Minimal 4px ambient movement
-  const bgShiftX = useTransform(smoothX, [-1, 1], [-4, 4]);
-  const bgShiftY = useTransform(smoothY, [-1, 1], [-4, 4]);
+  const bgShiftX = useTransform(smoothX, [-1, 1], [-3, 3]);
+  const bgShiftY = useTransform(smoothY, [-1, 1], [-3, 3]);
 
-  // Foreground Badges Parallax: 14px float
-  const foreShiftX = useTransform(smoothX, [-1, 1], [-14, 14]);
-  const foreShiftY = useTransform(smoothY, [-1, 1], [-14, 14]);
+  // Foreground Badges Parallax: 10px float
+  const foreShiftX = useTransform(smoothX, [-1, 1], [-10, 10]);
+  const foreShiftY = useTransform(smoothY, [-1, 1], [-10, 10]);
 
   // Detect touch devices to disable mouse tracking on mobile
   useEffect(() => {
@@ -40,23 +40,40 @@ export default function Hero() {
     setIsTouchDevice(isTouch);
   }, []);
 
-  // Global window mousemove tracking so the character's gaze actively follows across the whole screen
+  // Global mousemove tracking with smooth hero entry/exit (Requirements 5, 7, 9)
   useEffect(() => {
     if (isTouchDevice) return;
 
     const handleWindowMouseMove = (e) => {
-      if (!characterContainerRef.current) return;
-      const rect = characterContainerRef.current.getBoundingClientRect();
+      const hero = heroRef.current;
+      if (!hero || !characterContainerRef.current) return;
 
-      // Center of Guna's face in the viewport
-      const faceCenterX = rect.left + rect.width * 0.5;
-      const faceCenterY = rect.top + rect.height * 0.32;
+      const heroRect = hero.getBoundingClientRect();
+      const isInsideHero = (
+        e.clientY >= heroRect.top - 50 &&
+        e.clientY <= heroRect.bottom + 50 &&
+        e.clientX >= heroRect.left &&
+        e.clientX <= heroRect.right
+      );
+
+      setIsHovered(isInsideHero);
+
+      if (!isInsideHero) {
+        // Smoothly return head rotation to neutral (Requirement 9: 400-700ms)
+        rawMouseX.set(0);
+        rawMouseY.set(0);
+        setMousePos({ nx: 0, ny: 0 });
+        return;
+      }
+
+      const rect = characterContainerRef.current.getBoundingClientRect();
+      const faceCenterX = rect.left + rect.width * 0.508;
+      const faceCenterY = rect.top + rect.height * 0.340;
 
       const deltaX = e.clientX - faceCenterX;
       const deltaY = e.clientY - faceCenterY;
 
-      // Tracking span across viewport
-      const rangeX = Math.max(window.innerWidth * 0.45, 380);
+      const rangeX = Math.max(window.innerWidth * 0.45, 420);
       const rangeY = Math.max(window.innerHeight * 0.45, 320);
 
       const nx = Math.max(-1, Math.min(1, deltaX / rangeX));
@@ -65,17 +82,21 @@ export default function Hero() {
       rawMouseX.set(nx);
       rawMouseY.set(ny);
       setMousePos({ nx, ny });
+    };
 
-      // Trigger warm subtle smile when mouse is near character or within hero section
-      const dist = Math.hypot(deltaX, deltaY);
-      const isHeroHovered = heroRef.current ? heroRef.current.contains(e.target) : false;
-      setIsHovered(dist < 420 || isHeroHovered);
+    const handleWindowMouseLeave = () => {
+      setIsHovered(false);
+      rawMouseX.set(0);
+      rawMouseY.set(0);
+      setMousePos({ nx: 0, ny: 0 });
     };
 
     window.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
+    document.addEventListener('mouseleave', handleWindowMouseLeave);
 
     return () => {
       window.removeEventListener('mousemove', handleWindowMouseMove);
+      document.removeEventListener('mouseleave', handleWindowMouseLeave);
     };
   }, [isTouchDevice, rawMouseX, rawMouseY]);
 

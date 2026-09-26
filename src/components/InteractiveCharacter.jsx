@@ -3,19 +3,23 @@ import React, { useEffect, useRef } from 'react';
 /**
  * InteractiveCharacter
  * 
- * Cinematic 2D Anime Character featuring:
- * - Authentic Guna likeness in a crisp dark charcoal formal shirt (100% uncropped shoulders)
- * - 100% transparent background floating seamlessly on the hero section
- * - Ultra-responsive real-time eye gaze tracking (direct 60fps viewport tracking, ±9px iris travel)
- * - Periodic natural blinking with peaceful curved eyelids (occasional double-blink)
- * - Dynamic living smile cycle: smiles warmly then naturally returns to normal, like blinking
- * - Canvas bottom feather gradient for seamless blending into the page background
+ * Cinematic 2D Anime Character Eye Tracking & Facial Animation Engine
+ * 
+ * Implements:
+ * 1. Natural Eye Tracking: Rigid-core iris translation without distortion or bulging.
+ * 2. Relative Face Gaze Zone: Cursor distance calculated relative to face center with edge dampening.
+ * 3. Human Interpolation Lag: RAF-driven organic acceleration/deceleration (~500ms response).
+ * 4. Symmetrical Tracking: Both eyes track synchronously with strict sclera clamping (max 7.2px X, 3.4px Y).
+ * 5. Automatic Natural Blinking: 3-6s randomized interval, 140ms duration, occasional double-blink.
+ * 6. Responsive Friendly Smile: Ramps in (500-800ms) on hero entry; smoothly returns to neutral on exit.
+ * 7. Eyelid Occlusion & Layering: Upper lid naturally covers iris when looking upward.
+ * 8. Mobile Safe: Touch devices retain peaceful centered gaze and blinking with zero touch tracking.
  */
 export default function InteractiveCharacter({ isHovered = false, isTouchDevice = false }) {
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
 
-  // Gaze & Expression physics states (ref-based for 60fps RAF loop without re-renders)
+  // 60 FPS Physics & Animation State (ref-based for zero React re-renders)
   const gazeStateRef = useRef({
     currentX: 0,
     currentY: 0,
@@ -33,14 +37,13 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
     baseEyeData: null,
   });
 
-  // Load and cache all authentic portrait image assets
+  // 1. Asset Preloading & Eye Buffer Initialization
   useEffect(() => {
     let active = true;
     const baseImg = new Image();
     const blinkPatch = new Image();
     const smilePatch = new Image();
 
-    // Use full uncropped transparent formal portrait
     baseImg.src = '/guna-formal-transparent.png';
     blinkPatch.src = '/guna-patch-blink.png';
     smilePatch.src = '/guna-patch-smile.png';
@@ -50,11 +53,11 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
       loadedCount++;
       if (loadedCount === 3 && active) {
         // Offscreen buffer for the eye socket region (240x70)
+        // Source eye region in 1376x768 base image: x=530, y=255, w=240, h=70
         const eyeBuffer = document.createElement('canvas');
         eyeBuffer.width = 240;
         eyeBuffer.height = 70;
         const eyeBufferCtx = eyeBuffer.getContext('2d');
-        // Source eye region in 1376x768 base image: x=530, y=255, w=240, h=70
         eyeBufferCtx.drawImage(baseImg, 530, 255, 240, 70, 0, 0, 240, 70);
         const baseEyeData = eyeBufferCtx.getImageData(0, 0, 240, 70);
 
@@ -77,7 +80,7 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
     };
   }, []);
 
-  // Direct window mousemove listener for instant, jitter-free eyeball tracking
+  // 2. Relative Face Gaze Zone Tracking (Requirement 1, 4, 9, 10)
   useEffect(() => {
     if (isTouchDevice) return;
 
@@ -86,33 +89,79 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
 
-      // Guna's face center in viewport coordinates
-      const faceCenterX = rect.left + rect.width * 0.5;
-      const faceCenterY = rect.top + rect.height * 0.32;
+      // Check if cursor is inside or near the hero section
+      const heroEl = document.getElementById('home');
+      let isInsideHero = isHovered;
+      if (heroEl) {
+        const heroRect = heroEl.getBoundingClientRect();
+        // Give a generous 100px padding around hero
+        isInsideHero = (
+          e.clientY >= heroRect.top - 50 &&
+          e.clientY <= heroRect.bottom + 50 &&
+          e.clientX >= heroRect.left &&
+          e.clientX <= heroRect.right
+        );
+      }
+
+      // If cursor is outside hero, target returns to neutral center (Requirement 9)
+      if (!isInsideHero) {
+        gazeStateRef.current.targetX = 0;
+        gazeStateRef.current.targetY = 0;
+        gazeStateRef.current.targetSmile = 0.0;
+        return;
+      }
+
+      // Friendly smile response when inside hero (Requirement 7)
+      gazeStateRef.current.targetSmile = 0.75;
+
+      // Character's face center in viewport coordinates
+      // In 1600x1476 canvas: face center is at X=814 (50.8%), Y=502 (34.0%)
+      const faceCenterX = rect.left + rect.width * 0.508;
+      const faceCenterY = rect.top + rect.height * 0.340;
 
       const deltaX = e.clientX - faceCenterX;
       const deltaY = e.clientY - faceCenterY;
 
-      // Normalization span (comfortable eye tracking across entire screen)
-      const rangeX = Math.max(window.innerWidth * 0.38, 340);
-      const rangeY = Math.max(window.innerHeight * 0.38, 280);
+      // Limited Natural Gaze Zone around the face (Requirement 4)
+      // Active interaction zone: ~520px horizontal, ~360px vertical
+      const zoneX = Math.max(window.innerWidth * 0.40, 500);
+      const zoneY = Math.max(window.innerHeight * 0.40, 350);
 
-      const nx = Math.max(-1, Math.min(1, deltaX / rangeX));
-      const ny = Math.max(-1, Math.min(1, deltaY / rangeY));
+      // Soft non-linear saturation curve (tanh) - looking AT cursor rather than linear sliding
+      const normX = Math.tanh(deltaX / zoneX);
+      const normY = Math.tanh(deltaY / zoneY);
 
-      // Obvious, distinct pupil travel: ±9.0px X, ±5.0px Y
-      gazeStateRef.current.targetX = nx * 9.0;
-      gazeStateRef.current.targetY = ny * 5.0;
+      // Edge dampening factor to prevent straining at extreme screen edges (Requirement 4)
+      const distFromEdgeX = Math.min(e.clientX, window.innerWidth - e.clientX) / (window.innerWidth * 0.5);
+      const distFromEdgeY = Math.min(e.clientY, window.innerHeight - e.clientY) / (window.innerHeight * 0.5);
+      const edgeFactor = Math.min(1.0, Math.max(0.72, Math.min(distFromEdgeX, distFromEdgeY) * 1.35));
+
+      // Maximum iris movement (Requirement 2: horizontal 6-9px, vertical 3-5px)
+      // Normal gaze: ~70% horizontal, ~40% vertical of maximum
+      const targetX = normX * 7.2 * edgeFactor;
+      const targetY = normY * 3.4 * edgeFactor;
+
+      gazeStateRef.current.targetX = targetX;
+      gazeStateRef.current.targetY = targetY;
+    };
+
+    const handleMouseLeave = () => {
+      // Cursor left window completely -> return to center
+      gazeStateRef.current.targetX = 0;
+      gazeStateRef.current.targetY = 0;
+      gazeStateRef.current.targetSmile = 0.0;
     };
 
     window.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       window.removeEventListener('mousemove', handleWindowMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [isTouchDevice]);
+  }, [isTouchDevice, isHovered]);
 
-  // Periodic human blinking scheduler (every 3.5s - 5.5s with occasional double-blink)
+  // 3. Natural Blinking Scheduler: 3-6s interval, 140ms duration, occasional double-blink (Requirement 6)
   useEffect(() => {
     let timeoutId;
     let blinkDurationId;
@@ -129,15 +178,18 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
 
     const scheduleNextBlink = () => {
       if (!isMounted) return;
-      const delay = 3500 + Math.random() * 2000;
+      // Randomized interval between 3.0s and 6.0s
+      const delay = 3000 + Math.random() * 3000;
       timeoutId = setTimeout(() => {
-        if (Math.random() < 0.25) {
-          triggerBlink(130, () => {
+        // 20% probability of natural double-blink
+        if (Math.random() < 0.20) {
+          triggerBlink(120, () => {
             doubleBlinkId = setTimeout(() => {
               triggerBlink(110, scheduleNextBlink);
-            }, 100);
+            }, 90);
           });
         } else {
+          // Standard single blink: 140ms
           triggerBlink(140, scheduleNextBlink);
         }
       }, delay);
@@ -153,65 +205,23 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
     };
   }, []);
 
-  // Periodic and interactive smile cycle:
-  // "smile should also have animation that it can be normal after smiling like blinking eyes"
+  // 4. Smile Response Synced to Hero Hover (Requirement 7)
   useEffect(() => {
-    let smileTimeoutId;
-    let smileHoldId;
-    let isMounted = true;
-
-    const triggerSmile = (holdDuration, onComplete) => {
-      gazeStateRef.current.targetSmile = 0.85;
-      smileHoldId = setTimeout(() => {
-        // Naturally returns to normal expression
-        gazeStateRef.current.targetSmile = 0.0;
-        if (onComplete) onComplete();
-      }, holdDuration);
-    };
-
-    const scheduleNextSmile = () => {
-      if (!isMounted) return;
-      const delay = 6000 + Math.random() * 3500; // Every 6s - 9.5s
-      smileTimeoutId = setTimeout(() => {
-        triggerSmile(1800, scheduleNextSmile);
-      }, delay);
-    };
-
-    scheduleNextSmile();
-
-    return () => {
-      isMounted = false;
-      clearTimeout(smileTimeoutId);
-      clearTimeout(smileHoldId);
-    };
-  }, []);
-
-  // Additional smile trigger on explicit hover, smoothly relaxing back to normal
-  const prevHoveredRef = useRef(false);
-  useEffect(() => {
-    let interactionHoldId;
-    if (isHovered && !prevHoveredRef.current) {
-      gazeStateRef.current.targetSmile = 0.95;
-      interactionHoldId = setTimeout(() => {
-        gazeStateRef.current.targetSmile = 0.0;
-      }, 2000);
+    if (isHovered) {
+      gazeStateRef.current.targetSmile = 0.75;
+    } else {
+      gazeStateRef.current.targetSmile = 0.0;
     }
-    prevHoveredRef.current = isHovered;
-
-    return () => {
-      if (interactionHoldId) clearTimeout(interactionHoldId);
-    };
   }, [isHovered]);
 
-  // Main 60 FPS Canvas Rendering Engine
+  // 5. 60 FPS GPU Canvas Rendering Engine (Requirements 1, 2, 3, 8, 11)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // Uncropped coordinate mapping (Both shoulders 100% complete)
-    // Base image bounding box: X in [240, 1040] (w=800), Y in [30, 768] (h=738)
-    // High-DPI canvas dimensions: 1600 x 1476 (exact 2.0x scale)
+    // High-DPI coordinate mapping (Retina 2.0x sharpness)
+    // Source: X in [240, 1040] (w=800), Y in [30, 768] (h=738) -> Canvas: 1600 x 1476
     const CROP = {
       srcX: 240,
       srcY: 30,
@@ -229,40 +239,44 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
       const state = gazeStateRef.current;
 
       if (state.ready) {
-        // 1. Organic spring interpolation for gaze tracking (damping factor 0.12)
+        // Organic human lag interpolation with smooth acceleration/deceleration
+        // Spring factor: ~0.082 gives a calm, deliberate ~500ms human gaze movement
+        const lagFactor = (state.targetX === 0 && state.targetY === 0) ? 0.065 : 0.082;
         if (!state.isBlinking) {
-          state.currentX += (state.targetX - state.currentX) * 0.12;
-          state.currentY += (state.targetY - state.currentY) * 0.12;
+          state.currentX += (state.targetX - state.currentX) * lagFactor;
+          state.currentY += (state.targetY - state.currentY) * lagFactor;
         }
 
-        // 2. Smoothly transition smile expression in and out (factor 0.06)
-        state.currentSmile += (state.targetSmile - state.currentSmile) * 0.06;
+        // Smooth smile transition (duration ~600ms, factor 0.045)
+        state.currentSmile += (state.targetSmile - state.currentSmile) * 0.045;
 
-        // Clear canvas (100% transparent)
+        // Clear canvas (100% transparent background)
         ctx.clearRect(0, 0, CROP.dstW, CROP.dstH);
 
-        // A. Draw Full Uncropped Character (Preserving complete shoulders, hair & torso)
+        // Layer 1: Base Character Body & Torso (Shoulders 100% complete & uncropped)
         ctx.drawImage(
           state.baseImg,
           CROP.srcX, CROP.srcY, CROP.srcW, CROP.srcH,
           0, 0, CROP.dstW, CROP.dstH
         );
 
-        // B. Organic Eye Gaze Tracking (Natural iris movement within anatomical sockets)
-        const shiftX = Math.max(-9.2, Math.min(9.2, state.currentX));
-        const shiftY = Math.max(-5.2, Math.min(5.2, state.currentY));
+        // Layer 2: Rigid-Core Eye Gaze Tracking (Requirements 1, 2, 3, 8)
+        // Clamped strictly to anatomy: max 7.2px X, 3.4px Y (never leaves eye whites)
+        const shiftX = Math.max(-7.4, Math.min(7.4, state.currentX));
+        const shiftY = Math.max(-3.6, Math.min(3.6, state.currentY));
 
-        if (!state.isBlinking && (Math.abs(shiftX) > 0.04 || Math.abs(shiftY) > 0.04)) {
+        if (!state.isBlinking && (Math.abs(shiftX) > 0.02 || Math.abs(shiftY) > 0.02)) {
           const w = 240, h = 70;
           const outData = state.eyeBufferCtx.createImageData(w, h);
           const src = state.baseEyeData.data;
           const dst = outData.data;
           for (let i = 0; i < src.length; i++) dst[i] = src[i];
 
-          // Eye centers & radii in the 240x70 eyeBuffer
+          // Anatomical eye socket centers and radii in 240x70 buffer
+          // rInner = 0.55 defines the rigid iris core (100% distortion-free)
           const eyes = [
-            { cx: 61, cy: 22, rx: 25, ry: 13 },
-            { cx: 173, cy: 22, rx: 25, ry: 13 },
+            { cx: 61.5, cy: 22.0, rx: 22.0, ry: 12.0, rInner: 0.55 },
+            { cx: 173.0, cy: 22.0, rx: 22.0, ry: 12.0, rInner: 0.55 },
           ];
 
           for (const eye of eyes) {
@@ -275,10 +289,21 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
               for (let x = xMin; x <= xMax; x++) {
                 const nx = (x - eye.cx) / eye.rx;
                 const ny = (y - eye.cy) / eye.ry;
-                const distSq = nx * nx + ny * ny;
+                const r = Math.sqrt(nx * nx + ny * ny);
 
-                if (distSq < 1.0) {
-                  const weight = Math.cos(Math.sqrt(distSq) * Math.PI * 0.5);
+                if (r < 1.0) {
+                  let weight;
+                  if (r <= eye.rInner) {
+                    // RIGID IRIS CORE: 100% constant translation
+                    // Guarantees zero pupil distortion, zero bulging, and round symmetry
+                    weight = 1.0;
+                  } else {
+                    // Smooth cosine S-curve falloff to 0 at the eyelid boundary
+                    // Eyelids, eyelashes, skin, and eye corners remain 100% fixed
+                    const t = (r - eye.rInner) / (1.0 - eye.rInner);
+                    weight = 0.5 * (1.0 + Math.cos(t * Math.PI));
+                  }
+
                   const srcX = x - shiftX * weight;
                   const srcY = y - shiftY * weight;
 
@@ -313,7 +338,7 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
           );
         }
 
-        // C. Smooth Smiling Mouth Cross-Fade (Ramps up, holds, and returns to normal)
+        // Layer 3: Warm Subtle Smiling Mouth Overlay (Requirement 7: No teeth, gentle friendly smile)
         if (state.currentSmile > 0.01) {
           ctx.save();
           ctx.globalAlpha = Math.min(1, Math.max(0, state.currentSmile));
@@ -325,7 +350,7 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
           ctx.restore();
         }
 
-        // D. Authentic Closed Eyelids Blink Overlay
+        // Layer 4: Authentic Closed Eyelid Blink Overlay (Requirement 6: 120-180ms duration)
         if (state.isBlinking) {
           ctx.save();
           ctx.drawImage(

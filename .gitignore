@@ -47,4 +47,9 @@ public/composite-*
 public/app-*
 public/*.html
 public/*.mp4
+public/eye-*
+public/v12-*
+public/inspect-*
+public/real-eye-*
+public/live-vercel-*
 
