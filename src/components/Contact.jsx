@@ -63,6 +63,7 @@ export default function Contact() {
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
+          _replyto: formData.email.trim(),
           _subject: formData.subject.trim() || `Portfolio Message from ${formData.name.trim()}`,
           message: formData.message.trim(),
           _captcha: 'false',
