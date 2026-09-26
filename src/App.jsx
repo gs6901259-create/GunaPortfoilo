@@ -10,6 +10,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
+import AvatarCompanion from './components/AvatarCompanion';
 
 export default function App() {
   return (
@@ -33,6 +34,9 @@ export default function App() {
         <Achievements />
         <Contact />
       </main>
+
+      {/* Interactive Cartoon Mascot Avatar Companion */}
+      <AvatarCompanion />
 
       {/* Footer */}
       <Footer />

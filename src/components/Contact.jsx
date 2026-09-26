@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { GithubIcon, LinkedinIcon, InstagramIcon } from './Icons';
 import { personalInfo } from '../data/portfolioData';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 export default function Contact() {
   const [copied, setCopied] = useState(false);
@@ -134,6 +135,8 @@ export default function Contact() {
         
         {/* Section Header with Scroll-driven animation */}
         <div className="flex flex-col items-center text-center mb-16">
+          <SectionAvatarBadge section="contact" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

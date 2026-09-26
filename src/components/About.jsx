@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Smartphone, Cpu, Code2, GraduationCap, CheckCircle2, UserCheck, Sparkles } from 'lucide-react';
 import { personalInfo, aboutHighlights } from '../data/portfolioData';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 const iconMap = {
   Globe: Globe,
@@ -20,6 +21,8 @@ export default function About() {
         
         {/* Section Header with Scroll-driven animations */}
         <div className="flex flex-col items-center text-center mb-16">
+          <SectionAvatarBadge section="about" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

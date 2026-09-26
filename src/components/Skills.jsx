@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { GithubIcon } from './Icons';
 import { skillsData } from '../data/portfolioData';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 // Map icon names to icon components
 const iconComponents = {
@@ -48,6 +49,8 @@ export default function Skills() {
         
         {/* Section Header with Scroll Animation */}
         <div className="flex flex-col items-center text-center mb-14">
+          <SectionAvatarBadge section="skills" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

@@ -12,6 +12,7 @@ import {
 import { GithubIcon } from './Icons';
 import { projectsData } from '../data/portfolioData';
 import ProjectModal from './ProjectModal';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -129,6 +130,8 @@ export default function Projects() {
         
         {/* Section Header with Scroll-driven animation */}
         <div className="flex flex-col items-center text-center mb-16">
+          <SectionAvatarBadge section="projects" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

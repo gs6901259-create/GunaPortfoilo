@@ -7,6 +7,7 @@ const navItems = [
   { name: 'Skills', href: '#skills' },
   { name: 'Projects', href: '#projects' },
   { name: 'Education', href: '#education' },
+  { name: 'Achievements', href: '#achievements' },
   { name: 'Contact', href: '#contact' },
 ];
 
@@ -62,9 +63,13 @@ export default function Navbar() {
             className="group flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 rounded-lg p-1"
             aria-label="Guna - Home"
           >
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 via-blue-600/20 to-transparent border border-cyan-500/30 group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all duration-300">
-              <span className="font-mono text-cyan-400 font-bold text-lg">G</span>
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden bg-[#040d1e] border-2 border-cyan-500/50 group-hover:border-cyan-300 group-hover:shadow-[0_0_22px_rgba(0,240,255,0.7)] group-hover:scale-105 transition-all duration-300">
+              <img
+                src="/guna-avatar.png"
+                alt="Guna Character Avatar"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#030712] animate-pulse" title="Available to connect" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold tracking-wider text-lg text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1 font-mono">

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Code2, GitPullRequest, Sparkles, Edit3 } from 'lucide-react';
 import { achievementsData } from '../data/portfolioData';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 const typeIcons = {
   Hackathon: Trophy,
@@ -19,6 +20,8 @@ export default function Achievements() {
         
         {/* Section Header with Scroll Reveal */}
         <div className="flex flex-col items-center text-center mb-16">
+          <SectionAvatarBadge section="achievements" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

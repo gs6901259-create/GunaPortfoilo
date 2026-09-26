@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, Calendar, BookOpen, CheckCircle2 } from 'lucide-react';
 import { educationTimeline } from '../data/portfolioData';
+import SectionAvatarBadge from './SectionAvatarBadge';
 
 export default function Education() {
   return (
@@ -13,6 +14,8 @@ export default function Education() {
         
         {/* Section Header with Scroll Reveal */}
         <div className="flex flex-col items-center text-center mb-16">
+          <SectionAvatarBadge section="education" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
