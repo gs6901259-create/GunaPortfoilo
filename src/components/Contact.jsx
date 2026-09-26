@@ -54,34 +54,34 @@ export default function Contact() {
     setErrorMessage('');
 
     try {
-      const response = await fetch('https://api.web3forms.com/submit', {
+      const response = await fetch('https://formsubmit.co/ajax/varikuntagunasekhar@gmail.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         body: JSON.stringify({
-          access_key: '16131644-e6da-4c9e-8237-66e23571852e',
           name: formData.name.trim(),
           email: formData.email.trim(),
-          subject: formData.subject.trim() || `Portfolio Message from ${formData.name.trim()}`,
+          _subject: formData.subject.trim() || `Portfolio Message from ${formData.name.trim()}`,
           message: formData.message.trim(),
-          from_name: 'Guna Portfolio Contact Form',
+          _captcha: 'false',
+          _template: 'table',
         }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success === 'true' || data.success === true || (data.message && data.message.includes('Activation'))) {
         setStatus('success');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
         setStatus('error');
-        setErrorMessage(data.message || 'Something went wrong. Please reach out directly via email.');
+        setErrorMessage(data.message || 'Something went wrong. Please reach out directly to varikuntagunasekhar@gmail.com');
       }
     } catch (err) {
       setStatus('error');
-      setErrorMessage('Network error. Please check your connection or email directly.');
+      setErrorMessage('Network error. Please reach out directly to varikuntagunasekhar@gmail.com');
     }
   };
 
