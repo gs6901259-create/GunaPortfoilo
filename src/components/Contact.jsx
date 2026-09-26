@@ -34,7 +34,7 @@ export default function Contact() {
     if (status === 'error') setStatus('idle');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Basic validation
@@ -51,12 +51,38 @@ export default function Contact() {
     }
 
     setStatus('submitting');
+    setErrorMessage('');
 
-    // Simulate async submission
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 1000);
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: '16131644-e6da-4c9e-8237-66e23571852e',
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim() || `Portfolio Message from ${formData.name.trim()}`,
+          message: formData.message.trim(),
+          from_name: 'Guna Portfolio Contact Form',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStatus('success');
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setStatus('error');
+        setErrorMessage(data.message || 'Something went wrong. Please reach out directly via email.');
+      }
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage('Network error. Please check your connection or email directly.');
+    }
   };
 
   const socialLinks = [
