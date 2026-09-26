@@ -12,6 +12,7 @@ export const personalInfo = {
     linkedin: "https://www.linkedin.com/in/varikunta-gunasekhar-446997369/",
     instagram: "https://www.instagram.com/gunasekhar_online/",
     email: "mailto:varikuntagunasekhar@gmail.com",
+    liveUrl: "https://guna-portfoilo.vercel.app/",
   },
   stats: [
     { label: "Core Domains", value: "Web • Mobile • AI" },
