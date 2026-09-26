@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary capture files & tests
+test-*.mjs
+verify-*.mjs
+build-master-character-rig.mjs
+prepare-pure-rig.mjs
+scripts/
+
+# Test screenshots and captures in public
+public/test-*
+public/verify-*
+public/v-*
+public/track-*
+public/state-*
+public/debug-*
+public/canvas-test-*
+public/compare-eye-*
+public/head-test-*
+public/hero-parallax-*
+public/live-hero-*
+public/rig-test-*
+public/composite-*
+public/app-*
+public/*.html
+public/*.mp4
+
