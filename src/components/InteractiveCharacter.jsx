@@ -34,7 +34,6 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
     smilePatch: null,
     eyeBuffer: null,
     eyeBufferCtx: null,
-    baseEyeData: null,
   });
 
   // 1. Asset Preloading & Eye Buffer Initialization
@@ -59,7 +58,6 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
         eyeBuffer.height = 70;
         const eyeBufferCtx = eyeBuffer.getContext('2d');
         eyeBufferCtx.drawImage(baseImg, 530, 255, 240, 70, 0, 0, 240, 70);
-        const baseEyeData = eyeBufferCtx.getImageData(0, 0, 240, 70);
 
         gazeStateRef.current.ready = true;
         gazeStateRef.current.baseImg = baseImg;
@@ -67,7 +65,6 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
         gazeStateRef.current.smilePatch = smilePatch;
         gazeStateRef.current.eyeBuffer = eyeBuffer;
         gazeStateRef.current.eyeBufferCtx = eyeBufferCtx;
-        gazeStateRef.current.baseEyeData = baseEyeData;
       }
     };
 
@@ -136,10 +133,9 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
       const distFromEdgeY = Math.min(e.clientY, window.innerHeight - e.clientY) / (window.innerHeight * 0.5);
       const edgeFactor = Math.min(1.0, Math.max(0.72, Math.min(distFromEdgeX, distFromEdgeY) * 1.35));
 
-      // Maximum iris movement (Requirement 2: horizontal 6-9px, vertical 3-5px)
-      // Normal gaze: ~70% horizontal, ~40% vertical of maximum
-      const targetX = normX * 7.2 * edgeFactor;
-      const targetY = normY * 3.4 * edgeFactor;
+      // Maximum iris movement (subtle natural gaze: max ~3.8px X, 2.2px Y)
+      const targetX = normX * 3.8 * edgeFactor;
+      const targetY = normY * 2.2 * edgeFactor;
 
       gazeStateRef.current.targetX = targetX;
       gazeStateRef.current.targetY = targetY;
@@ -235,6 +231,44 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
     const toCanvasX = (x) => (x - CROP.srcX) * CROP.scale;
     const toCanvasY = (y) => (y - CROP.srcY) * CROP.scale;
 
+    // Anatomical 3D Eye Definitions with exact lash-line contour clipping
+    const eyes = [
+      {
+        cx: 61.5,
+        cy: 20.6,
+        rx: 15.6,
+        ry: 8.8,
+        irisRx: 8.8,
+        irisRy: 9.6,
+        pupilRx: 3.9,
+        pupilRy: 4.3,
+        path: (c) => {
+          c.beginPath();
+          c.moveTo(43.5, 22.0);
+          c.bezierCurveTo(48.0, 14.6, 68.0, 14.0, 77.2, 22.2);
+          c.bezierCurveTo(71.0, 28.2, 51.5, 28.0, 43.5, 22.0);
+          c.closePath();
+        }
+      },
+      {
+        cx: 173.0,
+        cy: 20.6,
+        rx: 15.6,
+        ry: 8.8,
+        irisRx: 8.8,
+        irisRy: 9.6,
+        pupilRx: 3.9,
+        pupilRy: 4.3,
+        path: (c) => {
+          c.beginPath();
+          c.moveTo(157.0, 22.2);
+          c.bezierCurveTo(166.0, 14.0, 186.0, 14.6, 190.5, 22.0);
+          c.bezierCurveTo(184.5, 28.0, 163.5, 28.2, 157.0, 22.2);
+          c.closePath();
+        }
+      }
+    ];
+
     const render = () => {
       const state = gazeStateRef.current;
 
@@ -260,77 +294,151 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
           0, 0, CROP.dstW, CROP.dstH
         );
 
-        // Layer 2: Rigid-Core Eye Gaze Tracking (Requirements 1, 2, 3, 8)
-        // Clamped strictly to anatomy: max 7.2px X, 3.4px Y (never leaves eye whites)
-        const shiftX = Math.max(-7.4, Math.min(7.4, state.currentX));
-        const shiftY = Math.max(-3.6, Math.min(3.6, state.currentY));
+        // Layer 2: 3D Dimensional Eye Rendering Engine
+        // Clamped strictly to anatomy (max ±3.8px X, ±2.2px Y - never leaves sclera)
+        const shiftX = Math.max(-3.8, Math.min(3.8, state.currentX));
+        const shiftY = Math.max(-2.2, Math.min(2.2, state.currentY));
 
-        if (!state.isBlinking && (Math.abs(shiftX) > 0.02 || Math.abs(shiftY) > 0.02)) {
-          const w = 240, h = 70;
-          const outData = state.eyeBufferCtx.createImageData(w, h);
-          const src = state.baseEyeData.data;
-          const dst = outData.data;
-          for (let i = 0; i < src.length; i++) dst[i] = src[i];
-
-          // Anatomical eye socket centers and radii in 240x70 buffer
-          // rInner = 0.55 defines the rigid iris core (100% distortion-free)
-          const eyes = [
-            { cx: 61.5, cy: 22.0, rx: 22.0, ry: 12.0, rInner: 0.55 },
-            { cx: 173.0, cy: 22.0, rx: 22.0, ry: 12.0, rInner: 0.55 },
-          ];
+        if (!state.isBlinking) {
+          const eyeCtx = state.eyeBufferCtx;
+          // Refresh eyeBuffer with original face pixels to keep surrounding lashes & skin 100% pristine
+          eyeCtx.drawImage(state.baseImg, 530, 255, 240, 70, 0, 0, 240, 70);
 
           for (const eye of eyes) {
-            const xMin = Math.max(0, Math.floor(eye.cx - eye.rx));
-            const xMax = Math.min(w - 1, Math.ceil(eye.cx + eye.rx));
-            const yMin = Math.max(0, Math.floor(eye.cy - eye.ry));
-            const yMax = Math.min(h - 1, Math.ceil(eye.cy + eye.ry));
+            eyeCtx.save();
+            eye.path(eyeCtx);
+            eyeCtx.clip();
 
-            for (let y = yMin; y <= yMax; y++) {
-              for (let x = xMin; x <= xMax; x++) {
-                const nx = (x - eye.cx) / eye.rx;
-                const ny = (y - eye.cy) / eye.ry;
-                const r = Math.sqrt(nx * nx + ny * ny);
+            // A. Clean Anatomical Sclera with soft depth gradient
+            const scleraGrad = eyeCtx.createRadialGradient(
+              eye.cx, eye.cy, 2,
+              eye.cx, eye.cy, eye.rx
+            );
+            scleraGrad.addColorStop(0.0, '#fafafc');
+            scleraGrad.addColorStop(0.68, '#eeedf0');
+            scleraGrad.addColorStop(1.0, '#dad4d6');
+            eyeCtx.fillStyle = scleraGrad;
+            eyeCtx.fill();
 
-                if (r < 1.0) {
-                  let weight;
-                  if (r <= eye.rInner) {
-                    // RIGID IRIS CORE: 100% constant translation
-                    // Guarantees zero pupil distortion, zero bulging, and round symmetry
-                    weight = 1.0;
-                  } else {
-                    // Smooth cosine S-curve falloff to 0 at the eyelid boundary
-                    // Eyelids, eyelashes, skin, and eye corners remain 100% fixed
-                    const t = (r - eye.rInner) / (1.0 - eye.rInner);
-                    weight = 0.5 * (1.0 + Math.cos(t * Math.PI));
-                  }
-
-                  const srcX = x - shiftX * weight;
-                  const srcY = y - shiftY * weight;
-
-                  const x0 = Math.floor(srcX);
-                  const x1 = Math.min(w - 1, x0 + 1);
-                  const y0 = Math.floor(srcY);
-                  const y1 = Math.min(h - 1, y0 + 1);
-                  const fx = srcX - x0;
-                  const fy = srcY - y0;
-
-                  const dstIdx = (y * w + x) * 4;
-                  const i00 = (y0 * w + x0) * 4;
-                  const i10 = (y0 * w + x1) * 4;
-                  const i01 = (y1 * w + x0) * 4;
-                  const i11 = (y1 * w + x1) * 4;
-
-                  for (let k = 0; k < 4; k++) {
-                    const top = src[i00 + k] * (1 - fx) + src[i10 + k] * fx;
-                    const bot = src[i01 + k] * (1 - fx) + src[i11 + k] * fx;
-                    dst[dstIdx + k] = Math.round(top * (1 - fy) + bot * fy);
-                  }
-                }
-              }
+            // Caruncle pink warmth in inner eye corner
+            if (eye.cx < 100) {
+              const cornerGrad = eyeCtx.createRadialGradient(76.5, 22.2, 0, 76.5, 22.2, 7.5);
+              cornerGrad.addColorStop(0.0, 'rgba(235, 170, 165, 0.70)');
+              cornerGrad.addColorStop(1.0, 'rgba(235, 170, 165, 0.0)');
+              eyeCtx.fillStyle = cornerGrad;
+              eyeCtx.fill();
+            } else {
+              const cornerGrad = eyeCtx.createRadialGradient(157.5, 22.2, 0, 157.5, 22.2, 7.5);
+              cornerGrad.addColorStop(0.0, 'rgba(235, 170, 165, 0.70)');
+              cornerGrad.addColorStop(1.0, 'rgba(235, 170, 165, 0.0)');
+              eyeCtx.fillStyle = cornerGrad;
+              eyeCtx.fill();
             }
+
+            const ix = eye.cx + shiftX;
+            const iy = eye.cy + shiftY;
+            const irx = eye.irisRx;
+            const iry = eye.irisRy;
+            const prx = eye.pupilRx;
+
+            // B. Layered 3D Iris with Limbal Ring & Warm Depth
+            eyeCtx.save();
+            eyeCtx.translate(ix, iy);
+            eyeCtx.scale(1, iry / irx);
+
+            const irisGrad = eyeCtx.createRadialGradient(-0.3, -0.3, 0.5, 0, 0, irx);
+            irisGrad.addColorStop(0.0, '#0c0a0e'); // Deep velvet pupil boundary
+            irisGrad.addColorStop(0.38, '#1d1513'); // Rich dark espresso
+            irisGrad.addColorStop(0.70, '#38281e'); // Warm chestnut amber depth
+            irisGrad.addColorStop(0.90, '#211814'); // Transition ring
+            irisGrad.addColorStop(1.0, '#09080b'); // Outer limbal ring
+
+            eyeCtx.fillStyle = irisGrad;
+            eyeCtx.beginPath();
+            eyeCtx.arc(0, 0, irx, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            // C. Fine Iris Radial Striations
+            eyeCtx.globalAlpha = 0.16;
+            eyeCtx.strokeStyle = '#5a4232';
+            eyeCtx.lineWidth = 0.6;
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 7) {
+              eyeCtx.beginPath();
+              eyeCtx.moveTo(Math.cos(a) * (irx * 0.38), Math.sin(a) * (irx * 0.38));
+              eyeCtx.lineTo(Math.cos(a) * (irx * 0.90), Math.sin(a) * (irx * 0.90));
+              eyeCtx.stroke();
+            }
+            eyeCtx.globalAlpha = 1.0;
+
+            // D. Outer Limbal Ring Stroke
+            eyeCtx.strokeStyle = 'rgba(7, 7, 10, 0.94)';
+            eyeCtx.lineWidth = 0.9;
+            eyeCtx.beginPath();
+            eyeCtx.arc(0, 0, irx - 0.45, 0, Math.PI * 2);
+            eyeCtx.stroke();
+
+            // E. Dimensional 3D Pupil
+            const pupilGrad = eyeCtx.createRadialGradient(0, 0, 0, 0, 0, prx);
+            pupilGrad.addColorStop(0.0, '#020204');
+            pupilGrad.addColorStop(0.85, '#070609');
+            pupilGrad.addColorStop(1.0, '#120f14');
+            eyeCtx.fillStyle = pupilGrad;
+            eyeCtx.beginPath();
+            eyeCtx.arc(0, 0, prx, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            // F. Bottom Amber Light Bounce
+            const bounceGrad = eyeCtx.createRadialGradient(
+              irx * 0.30, irx * 0.30, 0,
+              irx * 0.30, irx * 0.30, irx * 0.52
+            );
+            bounceGrad.addColorStop(0.0, 'rgba(165, 120, 95, 0.30)');
+            bounceGrad.addColorStop(1.0, 'rgba(165, 120, 95, 0.0)');
+            eyeCtx.fillStyle = bounceGrad;
+            eyeCtx.beginPath();
+            eyeCtx.arc(0, 0, irx - 0.8, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            eyeCtx.restore();
+
+            // G. Upper Eyelid Ambient Occlusion Shadow
+            const shadowGrad = eyeCtx.createLinearGradient(0, eye.cy - eye.ry, 0, eye.cy + eye.ry * 0.35);
+            shadowGrad.addColorStop(0.0, 'rgba(14, 10, 16, 0.62)');
+            shadowGrad.addColorStop(0.65, 'rgba(14, 10, 16, 0.22)');
+            shadowGrad.addColorStop(1.0, 'rgba(14, 10, 16, 0.0)');
+            eyeCtx.fillStyle = shadowGrad;
+            eyeCtx.fillRect(eye.cx - eye.rx - 2, eye.cy - eye.ry - 2, (eye.rx + 2) * 2, eye.ry * 2);
+
+            // H. Specular Corneal Catchlights with 3D Parallax Shift
+            const lx = ix - 2.5 + shiftX * 0.15;
+            const ly = iy - 2.6 + shiftY * 0.15;
+
+            // Soft gloss aura
+            const glossGlow = eyeCtx.createRadialGradient(lx, ly, 0, lx, ly, 2.8);
+            glossGlow.addColorStop(0.0, 'rgba(255, 255, 255, 0.90)');
+            glossGlow.addColorStop(0.40, 'rgba(255, 255, 255, 0.35)');
+            glossGlow.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+            eyeCtx.fillStyle = glossGlow;
+            eyeCtx.beginPath();
+            eyeCtx.arc(lx, ly, 2.8, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            // Crisp specular diamond
+            eyeCtx.fillStyle = '#ffffff';
+            eyeCtx.beginPath();
+            eyeCtx.arc(lx - 0.15, ly - 0.15, 1.25, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            // Secondary micro-catchlight
+            eyeCtx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            eyeCtx.beginPath();
+            eyeCtx.arc(lx + 1.2, ly + 2.4, 0.60, 0, Math.PI * 2);
+            eyeCtx.fill();
+
+            eyeCtx.restore();
           }
 
-          state.eyeBufferCtx.putImageData(outData, 0, 0);
+          // Blit 3D eye buffer to character canvas
           ctx.drawImage(
             state.eyeBuffer,
             toCanvasX(530), toCanvasY(255),

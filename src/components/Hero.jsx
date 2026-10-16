@@ -19,12 +19,6 @@ export default function Hero() {
   const smoothX = useSpring(rawMouseX, springConfig);
   const smoothY = useSpring(rawMouseY, springConfig);
 
-  // Subtle Head Micro-Movement (-1.5° to +1.5° Y, ±0.8° X, body/shoulders still)
-  const headRotateY = useTransform(smoothX, [-1, 1], [-1.5, 1.5]);
-  const headRotateX = useTransform(smoothY, [-1, 1], [0.8, -0.8]);
-  const headShiftX = useTransform(smoothX, [-1, 1], [-1.0, 1.0]);
-  const headShiftY = useTransform(smoothY, [-1, 1], [-0.5, 0.5]);
-
   // Foreground Badges Parallax: Subtle 8px float
   const foreShiftX = useTransform(smoothX, [-1, 1], [-8, 8]);
   const foreShiftY = useTransform(smoothY, [-1, 1], [-8, 8]);
@@ -201,32 +195,17 @@ export default function Hero() {
               className="relative w-full max-w-[500px] md:max-w-[540px] lg:max-w-[580px] aspect-[800/738] flex items-center justify-center"
               style={{ perspective: 1200 }}
             >
-              {/* Soft Ambient Liquid Glow behind character */}
+              {/* Soft Pearl-Silver Ambient Lighting behind character */}
               <div className="absolute inset-0 pointer-events-none -z-10 flex items-center justify-center">
-                <div className="w-[80%] h-[80%] rounded-full bg-gradient-to-tr from-sky-400/15 via-cyan-300/10 to-purple-300/10 blur-[80px]" />
+                <div className="w-[80%] h-[80%] rounded-full bg-gradient-to-tr from-slate-200/30 via-white/70 to-slate-100/40 blur-[90px]" />
               </div>
 
               {/* Minimal Liquid Glass Pedestal behind/below character */}
               <div className="absolute bottom-2 inset-x-8 h-28 rounded-3xl bg-white/40 border border-black/[0.05] shadow-liquid -z-10 backdrop-blur-xl" />
 
-              {/* Seamless Interactive Rig */}
-              <motion.div 
+              {/* Character Presentation - Body stays fixed while only eyes move */}
+              <div 
                 className="relative w-full h-full flex items-center justify-center bg-transparent"
-                style={{
-                  transformStyle: 'preserve-3d',
-                  rotateY: isTouchDevice ? 0 : headRotateY,
-                  rotateX: isTouchDevice ? 0 : headRotateX,
-                  x: isTouchDevice ? 0 : headShiftX,
-                  y: isTouchDevice ? 0 : headShiftY,
-                }}
-                animate={{
-                  y: [0, -5, 0],
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
               >
                 {/* Interactive Character Canvas Rig */}
                 <InteractiveCharacter
@@ -234,7 +213,7 @@ export default function Hero() {
                   mousePos={mousePos}
                   isTouchDevice={isTouchDevice}
                 />
-              </motion.div>
+              </div>
 
               {/* Subtle Foreground Badges */}
               <motion.div
