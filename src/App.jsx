@@ -8,23 +8,23 @@ import Education from './components/Education';
 import Achievements from './components/Achievements';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import ParticleBackground from './components/ParticleBackground';
-import CursorGlow from './components/CursorGlow';
+import LiquidBackground from './components/LiquidBackground';
+import LiquidCursor from './components/LiquidCursor';
 import AvatarCompanion from './components/AvatarCompanion';
 
 export default function App() {
   return (
-    <div className="relative min-h-screen bg-[#030712] text-slate-100 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Interactive subtle stardust particle background */}
-      <ParticleBackground />
+    <div className="relative min-h-screen bg-[#FAFAF8] text-ink-primary overflow-x-hidden selection:bg-sky-500/20 selection:text-sky-900">
+      {/* Calm organic liquid ambient background */}
+      <LiquidBackground />
 
-      {/* Ambient cursor glow spotlight for desktop */}
-      <CursorGlow />
+      {/* Signature fluid membrane cursor follower (desktop mouse only) */}
+      <LiquidCursor />
 
-      {/* Sticky glassmorphic navbar */}
+      {/* Translucent liquid glass navbar */}
       <Navbar />
 
-      {/* Main content sections */}
+      {/* Main portfolio content */}
       <main className="relative z-10">
         <Hero />
         <About />
@@ -35,10 +35,10 @@ export default function App() {
         <Contact />
       </main>
 
-      {/* Interactive Cartoon Mascot Avatar Companion */}
+      {/* Interactive Mascot Companion: Draggable with section-specific fullbody poses */}
       <AvatarCompanion />
 
-      {/* Footer */}
+      {/* Liquid white footer */}
       <Footer />
     </div>
   );

@@ -139,7 +139,7 @@ export const projectsData = [
     description: "A secure PIN-based file-sharing platform designed for seamless peer-to-peer file transfer. Users can upload any file, set an expiration window, and share it instantly using an encrypted 6-digit access PIN without requiring accounts or long messy URLs.",
     technologies: ["React", "Firebase", "Tailwind CSS", "Web Crypto API", "Node.js"],
     githubUrl: "https://github.com/gs6901259-create",
-    demoUrl: "https://sharepinz.online/",
+    demoUrl: "https://sharepinz.site/",
     featured: true,
     isUpcoming: false,
     accent: "from-cyan-500/20 to-blue-600/20",

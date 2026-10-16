@@ -380,10 +380,10 @@ export default function InteractiveCharacter({ isHovered = false, isTouchDevice 
         ref={canvasRef}
         width={1600}
         height={1476}
-        className="w-full h-full object-contain select-none pointer-events-none filter contrast-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.55)]"
+        className="w-full h-full object-contain select-none pointer-events-none filter contrast-[1.02] drop-shadow-[0_20px_40px_rgba(20,24,35,0.12)]"
         style={{
-          maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, black 88%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 88%, transparent 100%)',
         }}
       />
     </div>

@@ -19,7 +19,7 @@ An interactive, dark-themed personal portfolio showcasing full-stack engineering
   - 🎭 **Transparent Cutout:** Borderless, transparent character blending into the electric blue mesh gradient.
 
 - **Featured Projects:**
-  - **[SharePinz](https://sharepinz.online/):** Secure PIN-based peer-to-peer file sharing platform.
+  - **[SharePinz](https://sharepinz.site/):** Secure PIN-based peer-to-peer file sharing platform.
   - **Jama AI:** Upcoming AI calculator and voice assistant with step-by-step mathematical reasoning.
 
 - **Design & UI:**

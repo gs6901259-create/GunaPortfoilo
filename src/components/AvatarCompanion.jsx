@@ -100,7 +100,12 @@ const FUN_QUOTES = [
 
 export default function AvatarCompanion({ activeSectionProp }) {
   const [activeSection, setActiveSection] = useState('home');
-  const [speechVisible, setSpeechVisible] = useState(true);
+  const [speechVisible, setSpeechVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768;
+    }
+    return true;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragKey, setDragKey] = useState(0); // to reset position if needed
   const [jumpCount, setJumpCount] = useState(0);
@@ -111,6 +116,17 @@ export default function AvatarCompanion({ activeSectionProp }) {
   const [magneticOffset, setMagneticOffset] = useState({ x: 0, y: 0, rotate: 0, isNear: false });
   const containerRef = useRef(null);
   const autoHideTimerRef = useRef(null);
+
+  // Auto-close speech bubble on mobile screens to preserve clear reading space
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSpeechVisible(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Synchronize active section with scroll
   useEffect(() => {
@@ -252,51 +268,51 @@ export default function AvatarCompanion({ activeSectionProp }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 380, damping: 24 }}
-              className="relative mb-2 max-w-[270px] sm:max-w-[310px] rounded-2xl p-3.5 sm:p-4 bg-[#051124]/95 backdrop-blur-xl border border-cyan-500/40 shadow-2xl shadow-cyan-950/70 text-slate-100"
+              className="relative mb-2 max-w-[270px] sm:max-w-[310px] rounded-3xl p-4 bg-white/95 backdrop-blur-xl border border-black/[0.08] shadow-liquid text-ink-primary"
             >
               {/* Close bubble button */}
               <button
                 type="button"
                 onClick={() => setSpeechVisible(false)}
-                className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-ink-secondary hover:text-ink-primary hover:bg-black/[0.05] transition-colors"
                 aria-label="Close speech bubble"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
 
               {/* Action tag pill */}
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-400/40">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-sky-50 text-liquid-blue border border-sky-200">
                   <span className="text-xs">{currentAction.emoji}</span>
                   <span>{isDragging ? 'FLYING MASCOT 🎈' : currentAction.badge}</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">Guna</span>
+                <span className="text-[10px] text-ink-secondary font-mono">Guna</span>
               </div>
 
               {/* Speech bubble dialogue */}
-              <p className="text-xs sm:text-[13px] font-medium leading-snug text-slate-100 mb-1">
+              <p className="text-xs sm:text-[13px] font-medium leading-snug text-ink-primary mb-1.5">
                 {isDragging 
                   ? 'Wheee! Taking me for a fly across the screen! 🚀' 
                   : (quoteIndex !== null ? FUN_QUOTES[quoteIndex] : currentAction.tagline)}
               </p>
               
               {!isDragging && quoteIndex === null && (
-                <p className="text-[11px] text-slate-400 leading-tight">
+                <p className="text-[11px] text-ink-secondary leading-tight">
                   {currentAction.detail}
                 </p>
               )}
 
               {/* Action hint pill */}
               {!isDragging && (
-                <div className="mt-2 pt-2 border-t border-cyan-500/20 flex items-center justify-between text-[10px] text-cyan-400 font-mono">
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Move className="w-3 h-3 text-cyan-400" /> Drag me anywhere!
+                <div className="mt-2.5 pt-2 border-t border-black/[0.06] flex items-center justify-between text-[10px] font-mono">
+                  <span className="flex items-center gap-1 text-ink-secondary">
+                    <Move className="w-3 h-3 text-liquid-blue" /> Drag me anywhere!
                   </span>
                   {dragKey > 0 && (
                     <button
                       type="button"
                       onClick={handleResetPosition}
-                      className="hover:text-cyan-200 underline flex items-center gap-0.5"
+                      className="text-liquid-blue hover:underline flex items-center gap-0.5"
                     >
                       <RotateCcw className="w-2.5 h-2.5" /> Reset dock
                     </button>
@@ -306,7 +322,7 @@ export default function AvatarCompanion({ activeSectionProp }) {
 
               {/* Triangle pointer to avatar */}
               <div 
-                className="absolute -bottom-2 right-12 w-4 h-4 bg-[#051124] border-r border-b border-cyan-500/40 transform rotate-45"
+                className="absolute -bottom-2 right-12 w-4 h-4 bg-white border-r border-b border-black/[0.08] transform rotate-45"
               />
             </motion.div>
           )}
@@ -348,17 +364,17 @@ export default function AvatarCompanion({ activeSectionProp }) {
             className="group relative flex flex-col items-center"
             title="Draggable & magnetically attracted to your cursor! Click to interact."
           >
-            {/* Magnetic Aura / Cyan Glow Ring that intensifies near cursor */}
+            {/* Magnetic Aura / Soft Ambient Glow */}
             <div
               className={`absolute inset-0 rounded-full blur-xl transition-all duration-300 pointer-events-none ${
-                magneticOffset.isNear ? 'opacity-95 scale-110' : 'opacity-50'
+                magneticOffset.isNear ? 'opacity-85 scale-110' : 'opacity-40'
               }`}
               style={{
                 background: `radial-gradient(ellipse at center, ${currentAction.glowColor} 0%, transparent 70%)`,
               }}
             />
 
-            {/* High-Resolution Full-Body Character Image with Dedicated Section Action Pose */}
+            {/* High-Resolution Full-Body Character Image */}
             <div className="relative z-20">
               <AnimatePresence mode="wait">
                 <motion.img
@@ -369,25 +385,25 @@ export default function AvatarCompanion({ activeSectionProp }) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0.6, scale: 0.95 }}
                   transition={{ duration: 0.25 }}
-                  className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.8)] group-hover:drop-shadow-[0_14px_28px_rgba(0,240,255,0.5)] transition-all duration-300"
+                  className="h-28 sm:h-36 md:h-44 w-auto object-contain drop-shadow-[0_8px_18px_rgba(20,24,35,0.18)] group-hover:drop-shadow-[0_12px_24px_rgba(2,132,199,0.25)] transition-all duration-300"
                 />
               </AnimatePresence>
 
               {/* Status active pip */}
               <span 
-                className="absolute top-8 right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-[#040b19] shadow-sm animate-pulse" 
+                className="absolute top-8 right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-sm animate-pulse" 
                 title="Active & Ready" 
               />
             </div>
 
-            {/* Glowing Holographic Cyber-Pedestal under shoes */}
+            {/* Glowing Liquid Glass Pedestal under shoes */}
             <div className="relative -mt-1.5 z-10 flex flex-col items-center pointer-events-none">
               <div 
-                className={`w-16 sm:w-20 h-3 rounded-[100%] bg-gradient-to-r from-cyan-500/20 via-blue-500/40 to-cyan-500/20 border transition-all duration-300 ${
-                  magneticOffset.isNear ? 'border-cyan-300 shadow-[0_0_20px_#00f0ff]' : 'border-cyan-400/60 shadow-[0_0_12px_rgba(0,240,255,0.6)]'
+                className={`w-16 sm:w-20 h-3 rounded-[100%] bg-gradient-to-r from-sky-300/30 via-cyan-400/40 to-sky-300/30 border transition-all duration-300 ${
+                  magneticOffset.isNear ? 'border-sky-400 shadow-[0_0_16px_rgba(2,132,199,0.35)]' : 'border-sky-300/60 shadow-[0_0_10px_rgba(2,132,199,0.18)]'
                 }`} 
               />
-              <div className="w-8 sm:w-10 h-1.5 -mt-2 rounded-[100%] bg-cyan-300/80 blur-[2px] shadow-[0_0_8px_#00f0ff]" />
+              <div className="w-8 sm:w-10 h-1.5 -mt-2 rounded-[100%] bg-sky-400/60 blur-[2px]" />
             </div>
 
             {/* Magnetic Attraction Particle indicator when mouse is near */}
@@ -395,7 +411,7 @@ export default function AvatarCompanion({ activeSectionProp }) {
               <motion.span
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute -top-3 -right-2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-mono font-bold text-[8px] shadow-md border border-cyan-200"
+                className="absolute -top-3 -right-2 px-1.5 py-0.5 rounded-full bg-ink-primary text-white font-mono font-bold text-[8px] shadow-sm border border-black/10"
               >
                 🧲 Attracted!
               </motion.span>
@@ -406,9 +422,9 @@ export default function AvatarCompanion({ activeSectionProp }) {
               <motion.span
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute -bottom-5 px-2 py-0.5 rounded-full bg-[#051124]/90 border border-cyan-500/40 text-cyan-300 font-mono text-[9px] flex items-center gap-1 shadow-md"
+                className="absolute -bottom-5 px-2 py-0.5 rounded-full bg-white/90 border border-black/[0.08] text-ink-primary font-mono text-[9px] flex items-center gap-1 shadow-sm"
               >
-                <Move className="w-2.5 h-2.5 text-cyan-400" /> Drag Me
+                <Move className="w-2.5 h-2.5 text-liquid-blue" /> Drag Me
               </motion.span>
             )}
           </motion.div>
@@ -426,7 +442,7 @@ export default function AvatarCompanion({ activeSectionProp }) {
                 setQuoteIndex(null);
               }
             }}
-            className="text-[10px] font-mono text-cyan-400/90 hover:text-cyan-300 bg-[#051124]/90 px-3 py-1 rounded-full border border-cyan-500/30 hover:border-cyan-400/60 shadow-md transition-all pointer-events-auto flex items-center gap-1"
+            className="text-[10px] font-mono text-ink-secondary hover:text-liquid-blue bg-white/90 px-3 py-1 rounded-full border border-black/[0.08] hover:border-sky-300 shadow-sm transition-all pointer-events-auto flex items-center gap-1"
             title="Toggle companion dialogue"
           >
             <span>{speechVisible ? 'Hide message' : 'Guna Mascot ✨'}</span>
@@ -436,7 +452,7 @@ export default function AvatarCompanion({ activeSectionProp }) {
             <button
               type="button"
               onClick={handleResetPosition}
-              className="text-[10px] font-mono text-slate-400 hover:text-cyan-300 bg-[#051124]/90 px-2 py-1 rounded-full border border-slate-700 hover:border-cyan-500/40 shadow-md transition-all pointer-events-auto"
+              className="text-[10px] font-mono text-ink-secondary hover:text-liquid-blue bg-white/90 px-2 py-1 rounded-full border border-black/[0.08] hover:border-sky-300 shadow-sm transition-all pointer-events-auto"
               title="Reset position to corner"
             >
               <RotateCcw className="w-3 h-3" />

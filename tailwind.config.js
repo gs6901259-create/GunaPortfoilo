@@ -4,22 +4,25 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        dark: {
-          950: '#020612', // deep void black/navy
-          900: '#040b19', // main background
-          850: '#071024',
-          800: '#0a1633', // card background
-          700: '#11224d',
+        canvas: {
+          primary: '#FAFAF8',
+          secondary: '#F2F3F5',
+          subtle: '#ECEEEF',
         },
-        electric: {
-          blue: '#00f0ff',
-          cyan: '#38bdf8',
-          deep: '#2563eb',
-          glow: 'rgba(0, 240, 255, 0.4)',
+        ink: {
+          primary: '#111216',
+          secondary: '#696B73',
+          muted: '#94969F',
+        },
+        liquid: {
+          blue: '#0284c7',
+          cyan: '#06b6d4',
+          ice: '#67e8f9',
+          lavender: '#c084fc',
+          silver: '#cbd5e1',
         }
       },
       fontFamily: {
@@ -27,29 +30,35 @@ export default {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       animation: {
-        'float-slow': 'float 6s ease-in-out infinite',
-        'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
-        'spin-slow': 'spin 20s linear infinite',
+        'float-slow': 'floatSlow 7s ease-in-out infinite',
+        'float-gentle': 'floatGentle 4.5s ease-in-out infinite',
+        'liquid-sheen': 'liquidSheen 3s ease infinite',
+        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
       },
       keyframes: {
-        float: {
+        floatSlow: {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-12px)' },
+          '50%': { transform: 'translateY(-8px)' },
         },
-        pulseGlow: {
+        floatGentle: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
+        pulseSoft: {
           '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
-          '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+          '50%': { opacity: '0.7', transform: 'scale(1.03)' },
+        },
+        liquidSheen: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         }
       },
       boxShadow: {
-        'electric': '0 0 25px -5px rgba(0, 240, 255, 0.35)',
-        'electric-lg': '0 0 40px -5px rgba(0, 240, 255, 0.45)',
-        'electric-sm': '0 0 15px -3px rgba(0, 240, 255, 0.3)',
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        'liquid-sm': '0 2px 8px -2px rgba(20, 24, 35, 0.04), 0 6px 16px -4px rgba(20, 24, 35, 0.04)',
+        'liquid': '0 4px 14px -2px rgba(20, 24, 35, 0.04), 0 20px 40px -8px rgba(20, 24, 35, 0.07)',
+        'liquid-hover': '0 8px 24px -4px rgba(2, 132, 199, 0.08), 0 28px 60px -12px rgba(20, 24, 35, 0.12)',
+        'liquid-glow': '0 0 35px -5px rgba(6, 182, 212, 0.22)',
       },
-      backdropBlur: {
-        xs: '2px',
-      }
     },
   },
   plugins: [],
